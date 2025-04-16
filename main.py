@@ -230,10 +230,14 @@ class Bullet:
     def collides_with(self, target):
         return self.rect.colliderect(target.rect)
     
-def end_screen():
+def end_screen(score):
     screen.fill(BLUE)
     img = pygame.image.load('end.png')
     screen.blit(img, (0, 0))
+    
+    # Display final score
+    score_text = font_large.render(f"Score: {score}", True, WHITE)
+    screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2 + 90))
     
     play_again_button = Button(WIDTH//2 - 100, HEIGHT - 190, 200, 50, "PLAY AGAIN", BLUE, (0, 100, 200))
     quit_button = Button(WIDTH//2 - 100, HEIGHT - 120, 200, 50, "QUIT", BLUE, (0, 100, 200))
@@ -274,6 +278,7 @@ def game_loop():
     enemies = []
     spawn_delay = 1000  
     last_spawn_time = pygame.time.get_ticks()
+    score = 0  # Initialize score
 
     run = True
     clock = pygame.time.Clock()
@@ -342,6 +347,13 @@ def game_loop():
                     bullet_removed = True
                     if enemy.health <= 0:
                         enemies_to_remove.append(enemy)
+                        # Add score based on enemy type
+                        if enemy.type == 1:
+                            score += 25
+                        elif enemy.type == 2:
+                            score += 75
+                        elif enemy.type == 3:
+                            score += 50
             if not bullet_removed and bullet.off_screen():
                 bullets_to_remove.append(bullet)
         
@@ -365,6 +377,10 @@ def game_loop():
             enemy.draw(screen)
             for bullet in enemy.bullets:
                 bullet.draw(screen)
+        
+        # Draw score
+        score_text = font_medium.render(f"Score: {score}", True, WHITE)
+        screen.blit(score_text, (10, 10))
 
         if player.health <= 0:
             run = False
@@ -372,8 +388,8 @@ def game_loop():
         pygame.display.flip()
         clock.tick(60)
 
-    # Game over, show end screen
-    return end_screen()
+    # Game over, show end screen with final score
+    return end_screen(score)
 
 def main():
     pygame.init()
