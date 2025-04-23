@@ -1,7 +1,7 @@
 import pygame
 import random
 import math
-import time
+
 
 # Initialize Pygame
 pygame.init()
@@ -23,6 +23,37 @@ BLUE = (15, 161, 246)
 font_large = pygame.font.SysFont('Arial', 50)
 font_medium = pygame.font.SysFont('Arial', 30)
 font_small = pygame.font.SysFont('Arial', 20)
+
+# Pre-load images with error handling
+def load_image(path, size=None):
+    try:
+        img = pygame.image.load(path).convert_alpha()
+        if size:
+            img = pygame.transform.scale(img, size)
+        return img
+    except pygame.error as e:
+        print(f"Error loading image {path}: {e}")
+        # Create a placeholder surface
+        surf = pygame.Surface(size or (100, 100), pygame.SRCALPHA)
+        pygame.draw.rect(surf, (255, 0, 0), (0, 0, size[0] if size else 100, size[1] if size else 100))
+        return surf
+
+# Load all game images
+try:
+    menu_img = load_image('menu.png', (WIDTH, HEIGHT))
+    bg_img = load_image('bg.png', (WIDTH, HEIGHT))
+    end_img = load_image('end.png', (WIDTH, HEIGHT))
+    player_img = load_image('player.png', (110, 100))
+    bullet_img = load_image('bullet.png', (25, 50))
+    enemy_imgs = {
+        1: load_image('enemy1.png', (100, 80)),
+        2: load_image('enemy2.png', (100, 80)),
+        3: load_image('enemy3.png', (100, 80))
+    }
+except Exception as e:
+    print(f"Error loading game assets: {e}")
+    pygame.quit()
+    exit()
 
 class Button:
     def __init__(self, x, y, width, height, text, color, hover_color):
@@ -55,8 +86,7 @@ def draw_text(text, font, text_col, x, y):
     screen.blit(img, (x, y))
 
 def main_menu():
-    img = pygame.image.load('menu.png')
-    screen.blit(img,(0, 0))
+    screen.blit(menu_img, (0, 0))
     
     start_button = Button(WIDTH//2 - 100, HEIGHT//2 - 25, 200, 50, "START", BLUE, (0, 100, 200))
     quit_button = Button(WIDTH//2 - 100, HEIGHT//2 + 50, 200, 50, "QUIT", BLUE, (0, 100, 200))
@@ -93,8 +123,7 @@ class Player:
     def __init__(self):
         self.health = 100
         self.max_health = 100
-        self.inicial = pygame.image.load("player.png").convert_alpha()
-        self.image = pygame.transform.scale(self.inicial, (110, 100))
+        self.image = player_img
         self.rect = self.image.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         self.bullets = []
         self.shoot_delay = 450  # Shoot every x milliseconds
@@ -136,21 +165,17 @@ class Enemy:
         self.type = type
         self.health = 100
         self.max_health = 100
-        self.image = self.load_sprite(f"enemy{type}.png")  # Load enemy sprite
+        self.image = enemy_imgs[type]
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, WIDTH - self.rect.width)
         self.rect.y = random.randint(-100, -50)
         self.base_speed = random.randint(2, 5)
-        self.speed = self.base_speed * speed_multiplier  # Apply speed multiplier
+        self.speed = self.base_speed * speed_multiplier
         self.bullets = []
-        self.shoot_delay = 900  # Shoot every x milliseconds
+        self.shoot_delay = 900
         self.last_shot_time = pygame.time.get_ticks()
-        self.angle = 0  # For circular movement
-        self.amplitude = random.randint(50, 100)  # For sine wave movement
-
-    def load_sprite(self, path):
-        sprite = pygame.image.load(path).convert_alpha()
-        return pygame.transform.scale(sprite, (100, 80))
+        self.angle = 0
+        self.amplitude = random.randint(50, 100)
 
     def move(self):
         if self.type == 1:  # Straight down
@@ -209,21 +234,25 @@ class Enemy:
 class Bullet:
     def __init__(self, x, y, shooter):
         self.speed = 8
-        self.inicial = pygame.image.load("bullet.png")
-        self.image = pygame.transform.scale(self.inicial, (25, 50))
+        self.image = bullet_img
         self.rect = self.image.get_rect(center=(x, y))
-        self.shooter = shooter  # "player" or "enemy"
-        self.speed_x = 0  # For spread shots
+        self.shooter = shooter
+        self.speed_x = 0
 
     def move(self):
         if self.shooter == "player":
-            self.rect.y -= self.speed  # Move upward
+            self.rect.y -= self.speed
         elif self.shooter == "enemy":
-            self.rect.y += self.speed  # Move downward
-            self.rect.x += self.speed_x  # For spread shots
+            self.rect.y += self.speed
+            self.rect.x += self.speed_x
 
     def draw(self, surface):
-        surface.blit(self.image, self.rect)
+        if self.shooter == "enemy":
+            # Rotate 180 degrees for enemy bullets
+            rotated_img = pygame.transform.rotate(self.image, 180)
+            surface.blit(rotated_img, self.rect)
+        else:
+            surface.blit(self.image, self.rect)
 
     def off_screen(self):
         return self.rect.y < 0 or self.rect.y > HEIGHT
@@ -232,9 +261,7 @@ class Bullet:
         return self.rect.colliderect(target.rect)
     
 def end_screen(score):
-    screen.fill(BLUE)
-    img = pygame.image.load('end.png')
-    screen.blit(img, (0, 0))
+    screen.blit(end_img, (0, 0))
     
     # Display final score
     score_text = font_large.render(f"Score: {score}", True, WHITE)
@@ -251,37 +278,35 @@ def end_screen(score):
             if event.type == pygame.QUIT:
                 end_running = False
                 pygame.quit()
-                return False  # Exit the function
+                return False
             
             if play_again_button.is_clicked(mouse_pos, event):
                 end_running = False
-                return True  # Signal to play again
+                return True
             
             if quit_button.is_clicked(mouse_pos, event):
                 end_running = False
                 pygame.quit()
-                return False  # Signal to quit
+                return False
         
-        # Update button states
         play_again_button.check_hover(mouse_pos)
         quit_button.check_hover(mouse_pos)
         
-        # Draw buttons
         play_again_button.draw(screen)
         quit_button.draw(screen)
         
         pygame.display.flip()
     
-    return False  # Default case
+    return False
 
 def game_loop():
     player = Player()
     enemies = []
     spawn_delay = 1000  
     last_spawn_time = pygame.time.get_ticks()
-    score = 0  # Initialize score
-    speed_multiplier = 1.0  # Initial speed multiplier
-    last_threshold = 0  # Track the last score threshold reached
+    score = 0
+    speed_multiplier = 1.0
+    last_threshold = 0
 
     run = True
     clock = pygame.time.Clock()
@@ -290,26 +315,22 @@ def game_loop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return False  # Don't play again, quit entirely
+                return False
 
-        # Check if we've passed a new 300-point threshold
         if score // 300 > last_threshold:
             last_threshold = score // 300
-            speed_multiplier += 0.2  # Increase speed by 20% for each 300 points
+            speed_multiplier += 0.2
             print(f"Difficulty increased! Speed multiplier: {speed_multiplier}")
 
-        # Spawn new enemies with current speed multiplier
         current_time = pygame.time.get_ticks()
         if current_time - last_spawn_time > spawn_delay:
-            enemy_type = random.randint(1, 3)  # Random enemy type
+            enemy_type = random.randint(1, 3)
             enemies.append(Enemy(enemy_type, speed_multiplier))
             last_spawn_time = current_time
 
-        # Move player
         player.move()
         player.shoot()
 
-        # Move and check collisions for enemies
         enemies_to_remove = []
         for enemy in enemies[:]:
             enemy.move()
@@ -319,7 +340,6 @@ def game_loop():
                 player.take_damage(50)
                 enemies_to_remove.append(enemy)
 
-            # Check enemy bullets
             bullets_to_remove = []
             for bullet in enemy.bullets[:]:
                 bullet.move()
@@ -329,7 +349,6 @@ def game_loop():
                 elif bullet.off_screen():
                     bullets_to_remove.append(bullet)
             
-            # Remove marked bullets
             for bullet in bullets_to_remove:
                 if bullet in enemy.bullets:
                     enemy.bullets.remove(bullet)
@@ -337,12 +356,10 @@ def game_loop():
             if enemy.off_screen():
                 enemies_to_remove.append(enemy)
 
-        # Remove marked enemies
         for enemy in enemies_to_remove:
             if enemy in enemies:
                 enemies.remove(enemy)
 
-        # Player bullets collision
         bullets_to_remove = []
         enemies_to_remove = []
         
@@ -356,7 +373,6 @@ def game_loop():
                     bullet_removed = True
                     if enemy.health <= 0:
                         enemies_to_remove.append(enemy)
-                        # Add score based on enemy type
                         if enemy.type == 1:
                             score += 25
                         elif enemy.type == 2:
@@ -366,7 +382,6 @@ def game_loop():
             if not bullet_removed and bullet.off_screen():
                 bullets_to_remove.append(bullet)
         
-        # Remove marked bullets and enemies
         for bullet in bullets_to_remove:
             if bullet in player.bullets:
                 player.bullets.remove(bullet)
@@ -375,10 +390,7 @@ def game_loop():
             if enemy in enemies:
                 enemies.remove(enemy)
 
-        # Draw everything
-        screen.fill(BLUE)
-        img = pygame.image.load('bg.png')
-        screen.blit(img,(0,0))
+        screen.blit(bg_img, (0, 0))
         player.draw(screen)
         for bullet in player.bullets:
             bullet.draw(screen)
@@ -387,7 +399,6 @@ def game_loop():
             for bullet in enemy.bullets:
                 bullet.draw(screen)
         
-        # Draw score
         score_text = font_medium.render(f"Score: {score}", True, WHITE)
         screen.blit(score_text, (10, 10))
 
@@ -397,16 +408,14 @@ def game_loop():
         pygame.display.flip()
         clock.tick(60)
 
-    # Game over, show end screen with final score
     return end_screen(score)
 
 def main():
     pygame.init()
 
-    if not main_menu():  # Show menu first
+    if not main_menu():
         return
     
-    # Keep playing until the player chooses to quit
     play_again = True
     while play_again:
         play_again = game_loop()
