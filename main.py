@@ -132,7 +132,7 @@ class Player:
 
 # Enemy class
 class Enemy:
-    def __init__(self, type):
+    def __init__(self, type, speed_multiplier=1.0):
         self.type = type
         self.health = 100
         self.max_health = 100
@@ -140,7 +140,8 @@ class Enemy:
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, WIDTH - self.rect.width)
         self.rect.y = random.randint(-100, -50)
-        self.speed = random.randint(2, 5)
+        self.base_speed = random.randint(2, 5)
+        self.speed = self.base_speed * speed_multiplier  # Apply speed multiplier
         self.bullets = []
         self.shoot_delay = 900  # Shoot every x milliseconds
         self.last_shot_time = pygame.time.get_ticks()
@@ -279,6 +280,8 @@ def game_loop():
     spawn_delay = 1000  
     last_spawn_time = pygame.time.get_ticks()
     score = 0  # Initialize score
+    speed_multiplier = 1.0  # Initial speed multiplier
+    last_threshold = 0  # Track the last score threshold reached
 
     run = True
     clock = pygame.time.Clock()
@@ -289,11 +292,17 @@ def game_loop():
                 pygame.quit()
                 return False  # Don't play again, quit entirely
 
-        # Spawn new enemies
+        # Check if we've passed a new 300-point threshold
+        if score // 300 > last_threshold:
+            last_threshold = score // 300
+            speed_multiplier += 0.2  # Increase speed by 20% for each 300 points
+            print(f"Difficulty increased! Speed multiplier: {speed_multiplier}")
+
+        # Spawn new enemies with current speed multiplier
         current_time = pygame.time.get_ticks()
         if current_time - last_spawn_time > spawn_delay:
             enemy_type = random.randint(1, 3)  # Random enemy type
-            enemies.append(Enemy(enemy_type))
+            enemies.append(Enemy(enemy_type, speed_multiplier))
             last_spawn_time = current_time
 
         # Move player
