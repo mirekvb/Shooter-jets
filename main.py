@@ -11,6 +11,10 @@ WIDTH, HEIGHT = 500, 700
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shooter Jets")
 
+# Game logo
+icon = pygame.image.load("gamelogo.png")
+pygame.display.set_icon(icon)
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -43,12 +47,12 @@ try:
     menu_img = load_image('menu.png', (WIDTH, HEIGHT))
     bg_img = load_image('bg.png', (WIDTH, HEIGHT))
     end_img = load_image('end.png', (WIDTH, HEIGHT))
-    player_img = load_image('player.png', (110, 100))
+    player_img = load_image('player.png', (120, 110))
     bullet_img = load_image('bullet.png', (25, 50))
     enemy_imgs = {
-        1: load_image('enemy1.png', (100, 80)),
-        2: load_image('enemy2.png', (100, 80)),
-        3: load_image('enemy3.png', (100, 80))
+        1: load_image('enemy1.png', (110, 90)),
+        2: load_image('enemy2.png', (145, 95)),
+        3: load_image('enemy3.png', (110, 90))
     }
 except Exception as e:
     print(f"Error loading game assets: {e}")
@@ -302,7 +306,7 @@ def end_screen(score):
 def game_loop():
     player = Player()
     enemies = []
-    spawn_delay = 1000  
+    spawn_delay = 1000
     last_spawn_time = pygame.time.get_ticks()
     score = 0
     speed_multiplier = 1.0
@@ -418,7 +422,7 @@ def main():
     
     play_again = True
     while play_again:
-        play_again = game_loop()
+        play_again = game_loop() 
 
 if __name__ == "__main__":
     main()
