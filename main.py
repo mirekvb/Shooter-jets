@@ -11,8 +11,8 @@ WIDTH, HEIGHT = 500, 700
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shooter Jets")
 
-# Game logo
-icon = pygame.image.load("gamelogo.png")
+# Game icon
+icon = pygame.image.load("gameicon.png")
 pygame.display.set_icon(icon)
 
 # Colors
@@ -47,12 +47,12 @@ try:
     menu_img = load_image('menu.png', (WIDTH, HEIGHT))
     bg_img = load_image('bg.png', (WIDTH, HEIGHT))
     end_img = load_image('end.png', (WIDTH, HEIGHT))
-    player_img = load_image('player.png', (120, 110))
+    player_img = load_image('player.png', (125, 115))
     bullet_img = load_image('bullet.png', (25, 50))
     enemy_imgs = {
         1: load_image('enemy1.png', (110, 90)),
-        2: load_image('enemy2.png', (145, 95)),
-        3: load_image('enemy3.png', (110, 90))
+        2: load_image('enemy2.png', (110, 90)),
+        3: load_image('enemy3.png', (145, 95))
     }
 except Exception as e:
     print(f"Error loading game assets: {e}")
@@ -178,20 +178,33 @@ class Enemy:
         self.bullets = []
         self.shoot_delay = 900
         self.last_shot_time = pygame.time.get_ticks()
-        self.angle = 0
-        self.amplitude = random.randint(50, 100)
+        self.direction = 1
+        self.steps = 0
+        self.start_x = self.rect.x
+
 
     def move(self):
         if self.type == 1:  # Straight down
             self.rect.y += self.speed
-        elif self.type == 2:  # Zigzag
+        elif self.type == 2:  # Square
             self.rect.y += self.speed
-            self.rect.x += math.sin(self.angle) * 3
-            self.angle += 0.1
-        elif self.type == 3:  # Circular
+            self.steps +=1
+
+            if self.steps % 30 == 0:
+                self.direction *= -1
+        elif self.type == 3:  # Zigzag
             self.rect.y += self.speed
-            self.rect.x += math.cos(self.angle) * 3
-            self.angle += 0.1
+            self.steps += 1
+            
+            # Move left and right in a triangular pattern
+            progress = (self.steps % 60) / 60  # 0 to 1
+            if progress < 0.5:
+                # First half: move right
+                self.rect.x = self.start_x + progress * 100
+            else:
+                # Second half: move left
+                self.rect.x = self.start_x + (1 - progress) * 100
+            
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -224,15 +237,28 @@ class Enemy:
                 bullet = Bullet(self.rect.centerx, self.rect.bottom, "enemy")
                 self.bullets.append(bullet)
             elif self.type == 2:  # Spread shot
-                for angle in [-15, 0, 15]:
                     bullet = Bullet(self.rect.centerx, self.rect.bottom, "enemy")
-                    bullet.speed_x = math.sin(math.radians(angle)) * 3
-                    bullet.speed_y = bullet.speed
                     self.bullets.append(bullet)
+
             elif self.type == 3:  # Targeted shot
+                
                 bullet = Bullet(self.rect.centerx, self.rect.bottom, "enemy")
                 self.bullets.append(bullet)
+                
+                # Left angled bullet
+                bullet_left = Bullet(self.rect.centerx, self.rect.bottom, "enemy")
+                bullet_left.speed_x = -1.5 # Movement to the side
+                bullet_left.speed = bullet_left.speed * 0.9  # Slightly slower vertical speed
+                self.bullets.append(bullet_left) 
+                
+                # Right angled bullet
+                bullet_right = Bullet(self.rect.centerx, self.rect.bottom, "enemy")
+                bullet_right.speed_x = 1.0 # Movement to the side
+                bullet_right.speed = bullet_right.speed * 0.9  # Slightly slower vertical speed
+                self.bullets.append(bullet_right)
+
             self.last_shot_time = current_time
+            
 
 # Bullet class
 class Bullet:
