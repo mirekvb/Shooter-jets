@@ -52,7 +52,7 @@ try:
     enemy_imgs = {
         1: load_image('enemy1.png', (110, 90)),
         2: load_image('enemy2.png', (110, 90)),
-        3: load_image('enemy3.png', (145, 95))
+        3: load_image('enemy3.png', (155, 95))
     }
 except Exception as e:
     print(f"Error loading game assets: {e}")
@@ -406,9 +406,9 @@ def game_loop():
                         if enemy.type == 1:
                             score += 25
                         elif enemy.type == 2:
-                            score += 75
-                        elif enemy.type == 3:
                             score += 50
+                        elif enemy.type == 3:
+                            score += 75
             if not bullet_removed and bullet.off_screen():
                 bullets_to_remove.append(bullet)
         
