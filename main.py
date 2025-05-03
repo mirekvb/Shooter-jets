@@ -186,16 +186,24 @@ class Enemy:
     def move(self):
         if self.type == 1:  # Straight down
             self.rect.y += self.speed
-        elif self.type == 2:  # Square
-            self.rect.y += self.speed
-            self.steps +=1
 
+        elif self.type == 2:  # Zigzag
+            self.rect.y += self.speed
+            self.steps += 1
+            # Move left and right in a triangular pattern
+            progress = (self.steps % 100) / 100  # 0 to 1
+            if progress < 0.5:
+                # First half: move right
+                self.rect.x = self.start_x + progress * 100
+            else:
+                # Second half: move left
+                self.rect.x = self.start_x + (1 - progress) * 100
             if self.steps % 30 == 0:
                 self.direction *= -1
+
         elif self.type == 3:  # Zigzag
             self.rect.y += self.speed
             self.steps += 1
-            
             # Move left and right in a triangular pattern
             progress = (self.steps % 60) / 60  # 0 to 1
             if progress < 0.5:
